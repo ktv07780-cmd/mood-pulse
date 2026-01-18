@@ -1,12 +1,12 @@
 /* === Глобальный state === */
-let state = {
+window.state = {
     mode: null,
     lat: null,
     lng: null
 };
 
 /* === данные континентов === */
-const continents = [
+window.continents = [
     { name: 'North America', lat: 54, lng: -105 },
     { name: 'South America', lat: -15, lng: -60 },
     { name: 'Europe', lat: 50, lng: 15 },
@@ -17,19 +17,19 @@ const continents = [
 ];
 
 /* === создание глобуса === */
-const world = Globe()(document.getElementById('globeViz'))
+window.world = Globe()(document.getElementById('globeViz'))
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
     .backgroundColor('#000')
     .onGlobeClick(({ lat, lng }) => {
-        if (!state.mode) return;
-        state.lat = lat;
-        state.lng = lng;
+        if (!window.state.mode) return;
+        window.state.lat = lat;
+        window.state.lng = lng;
         document.getElementById('instr').style.display = 'none';
         document.getElementById('emotions').style.display = 'block';
     });
 
-world.controls().autoRotate = true;
-world.controls().autoRotateSpeed = 0.6;
+window.world.controls().autoRotate = true;
+window.world.controls().autoRotateSpeed = 0.6;
 
 /* === снежный эффект на полюсах === */
 const polarSnowPoints = [];
@@ -56,7 +56,7 @@ for(let lat=-90; lat<=-75; lat++){
     }
 }
 
-world.pointsData(polarSnowPoints)
+window.world.pointsData(polarSnowPoints)
      .pointLat(d => d.lat)
      .pointLng(d => d.lng)
      .pointColor(d => d.color)
