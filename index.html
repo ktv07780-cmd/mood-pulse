@@ -2,72 +2,150 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>EMO-PULSE 2026</title>
-    <script src="https://cdn.jsdelivr.net"></script>
-    <script src="https://cdn.jsdelivr.net"></script>
-    <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-        .ui { position: absolute; z-index: 10; width: 100%; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-        .top { top: 20px; } .bottom { bottom: 40px; }
-        .panel { background: rgba(20,20,20,0.9); padding: 20px; border-radius: 20px; border: 1px solid #444; pointer-events: auto; text-align: center; }
-        button { padding: 10px 15px; margin: 4px; border-radius: 12px; border: 1px solid #555; background: #111; color: #fff; cursor: pointer; font-weight: bold; }
-        button.selected { background: #fff; color: #000; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMO-PULSE 2026 | Global Tracker</title>
+    <!-- ПОЛНЫЕ ССЫЛКИ НА БИБЛИОТЕКИ -->
+	<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+	<script src="https://unpkg.com/globe.gl@2.34.0/dist/globe.gl.min.js"></script>
+	<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+    overflow: hidden;
+}
+#globeViz {
+    width: 100vw;
+    height: 100vh;
+}
+.ui {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+}
+.top { top: 20px; }
+.bottom { bottom: 40px; }
+
+.panel {
+    background: rgba(20,20,20,0.9);
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #444;
+    pointer-events: auto;
+    text-align: center;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 4px;
+    border-radius: 12px;
+    border: 1px solid #555;
+    background: #111;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+}
+button.selected {
+    background: #fff;
+    color: #000;
+}
+</style>
 </head>
+
 <body>
-    <div class="ui top">
-        <div class="panel">
-            <div>1. СТАТУС / STATUS</div>
-            <button onclick="setMode('here', this)">📍 Я ТУТ / I AM HERE</button>
-            <button onclick="setMode('focus', this)">💭 ДУМАЮ / THINKING</button>
+
+<div class="ui top">
+    <div class="panel">
+        <div>1. СТАТУС / STATUS</div>
+        <button onclick="setMode('here', this)">📍 Я ТУТ</button>
+        <button onclick="setMode('focus', this)">💭 ДУМАЮ</button>
+    </div>
+</div>
+
+<div id="globeViz"></div>
+
+<div class="ui bottom" id="action-panel" style="display:none;">
+    <div class="panel">
+        <div id="instr">2. КЛИКНИТЕ НА ШАР</div>
+        <div id="emotions" style="display:none;">
+            <button style="color:#00ff88" onclick="finish('joy')">РАДОСТЬ</button>
+            <button style="color:#ff4444" onclick="finish('anger')">ГНЕВ</button>
         </div>
     </div>
-    <div id="globeViz"></div>
-    <div class="ui bottom" id="action-panel" style="display: none;">
-        <div class="panel">
-            <div id="instr">2. КЛИКНИТЕ НА ШАР / CLICK GLOBE</div>
-            <div id="emotions" style="display: none;">
-                <button style="color: #00ff88;" onclick="finish('joy')">РАДОСТЬ / JOY</button>
-                <button style="color: #ff4444;" onclick="finish('anger')">ГНЕВ / ANGER</button>
-            </div>
-        </div>
-    </div>
-    <script>
-        const SB_URL = 'https://yhlshbefcjfzzripqlzo.supabase.co'; 
-        const SB_KEY = 'sb_publishable_PVX1Hgt9KyL0r8o7DRbNAQ_gj0ixPeM';
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-        let state = { mode: null, lat: null, lng: null };
+</div>
 
-        const world = Globe()(document.getElementById('globeViz'))
-            .globeImageUrl('https://unpkg.com')
-            .onGlobeClick(({ lat, lng }) => {
-                if(!state.mode) return;
-                state.lat = lat; state.lng = lng;
-                document.getElementById('instr').style.display = 'none';
-                document.getElementById('emotions').style.display = 'block';
-            });
+<script>
+/* === данные из Supabase (Settings -> API) === */
+const SB_URL = 'https://yhlshbefcjfzzripqlzo.supabase.co';
+const SB_KEY = 'sb_publishable_PVX1Hgt9KyL0r8o7DRbNAQ_gj0ixPeM';
+/* === /* === данные из Supabase (Settings -> API) === */
+const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        function setMode(m, el) {
-            state.mode = m;
-            document.querySelectorAll('.top button').forEach(b => b.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('action-panel').style.display = 'flex';
-        }
+/* === Используем библиотеку Supabase === */
+let state = {
+    mode: null,
+    lat: null,
+    lng: null
+};
 
-        async function finish(emotion) {
-            const payload = {
-                emotion: emotion, presence_type: state.mode,
-                lat: state.lat, lng: state.lng,
-                os: navigator.platform, browser: navigator.userAgent,
-                lang: navigator.language, fingerprint: btoa(navigator.userAgent).slice(0,16)
-            };
-            const { error } = await supabaseClient.from('world_mood_data').insert([payload]);
-            if (!error) { 
-                alert('Sent! / Отправлено!'); 
-                location.reload(); 
-            } else { alert('Error! Check Supabase Table Name.'); }
-        }
-        world.controls().autoRotate = true;
-    </script>
+/* === Ссылка на текстуру Земли === */
+const world = Globe()
+(document.getElementById('globeViz'))
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
+    .backgroundColor('#000')
+    .onGlobeClick(({ lat, lng }) => {
+        if (!state.mode) return;
+        state.lat = lat;
+        state.lng = lng;
+        document.getElementById('instr').style.display = 'none';
+        document.getElementById('emotions').style.display = 'block';
+    });
+
+world.controls().autoRotate = true;
+world.controls().autoRotateSpeed = 0.6;
+
+/* === UI === */
+function setMode(m, el) {
+    state.mode = m;
+    document.querySelectorAll('.top button')
+        .forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('action-panel').style.display = 'flex';
+}
+
+/* === SEND DATA === */
+async function finish(emotion) {
+    const payload = {
+        emotion: emotion,
+        presence_type: state.mode,
+        lat: state.lat,
+        lng: state.lng,
+        os: navigator.platform,
+        browser: navigator.userAgent,
+        lang: navigator.language,
+        fingerprint: btoa(navigator.userAgent).slice(0,16)
+    };
+
+    const { error } = await supabaseClient
+        .from('world_mood_data')
+        .insert([payload]);
+
+    if (!error) {
+        alert('Отправлено');
+        location.reload();
+    } else {
+        console.error(error);
+        alert('Ошибка Supabase (проверь таблицу / RLS)');
+    }
+}
+</script>
+
 </body>
 </html>
