@@ -9,7 +9,7 @@
 	<script src="https://unpkg.com/globe.gl@2.34.0/dist/globe.gl.min.js"></script>
 	<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-	<link rel="stylesheet" href="https://raw.githubusercontent.com/USERNAME/REPO/main/emo-pulse.css">
+	<link rel="stylesheet" href="emo-pulse.css">
 
 </head>
 
@@ -71,6 +71,7 @@ const continents = [
     { name: 'Antarctica', lat: -80, lng: 0 }
 ];
 
+/* === создание глобуса === */
 const world = Globe()
 (document.getElementById('globeViz'))
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
@@ -85,6 +86,39 @@ const world = Globe()
 
 world.controls().autoRotate = true;
 world.controls().autoRotateSpeed = 0.6;
+
+/* === снежный эффект на полюсах === */
+const polarSnowPoints = [];
+
+// северный полюс: широта 75°–90°
+for(let lat = 75; lat <= 90; lat += 1){
+    for(let lng = -180; lng < 180; lng += 10){
+        polarSnowPoints.push({
+            lat, lng,
+            size: 0.3 + Math.random()*0.2,  // разная интенсивность для градиента
+            color: `rgba(255,255,255,${0.1 + Math.random()*0.3})` // плавная прозрачность
+        });
+    }
+}
+
+// южный полюс: широта -75°–-90°
+for(let lat = -90; lat <= -75; lat += 1){
+    for(let lng = -180; lng < 180; lng += 10){
+        polarSnowPoints.push({
+            lat, lng,
+            size: 0.3 + Math.random()*0.2,
+            color: `rgba(255,255,255,${0.1 + Math.random()*0.3})`
+        });
+    }
+}
+
+// добавляем на globe
+world.pointsData(polarSnowPoints)
+     .pointLat(d => d.lat)
+     .pointLng(d => d.lng)
+     .pointColor(d => d.color)
+     .pointAltitude(0.01)
+     .pointRadius(d => d.size);
 
 /* === UI === */
 function setMode(m, el) {
