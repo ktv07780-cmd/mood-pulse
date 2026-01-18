@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMO-PULSE 2026 | Global Tracker</title>
+    <!-- ПОЛНЫЕ ССЫЛКИ НА БИБЛИОТЕКИ -->
     <script src="https://unpkg.com"></script>
     <script src="https://unpkg.com"></script>
     <style>
@@ -44,15 +45,18 @@
     </div>
 
     <script>
-        // ВАЖНО: Вставьте ваши ключи из Supabase здесь
-        const SB_URL = 'ВАШ_SUPABASE_URL';
-        const SB_KEY = 'ВАШ_SUPABASE_ANON_KEY';
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        // данные из Supabase (Settings -> API)
+        const SB_URL = 'https://yhlshbefcjfzzripqlzo.supabase.co'; 
+        const SB_KEY = 'sb_publishable_PVX1Hgt9KyL0r8o7DRbNAQ_gj0ixPeM';
+        
+        // Используем библиотеку Supabase
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
         let state = { mode: null, lat: null, lng: null };
 
+        // Ссылка на текстуру Земли
         const world = Globe()(document.getElementById('globeViz'))
-            .globeImageUrl('//://unpkg.com')
+            .globeImageUrl('https://unpkg.com')
             .onGlobeClick(({ lat, lng }) => {
                 if(!state.mode) return;
                 state.lat = lat; state.lng = lng;
@@ -70,7 +74,7 @@
         async function finish(emotion) {
             const fingerprint = btoa(navigator.userAgent + navigator.language).slice(0, 16);
             const payload = {
-                emotion,
+                emotion: emotion,
                 presence_type: state.mode,
                 lat: state.lat, lng: state.lng,
                 os: navigator.platform,
@@ -79,11 +83,14 @@
                 fingerprint: fingerprint
             };
 
-            const { error } = await supabase.from('world_mood_data').insert([payload]);
+            const { error } = await supabaseClient.from('world_mood_data').insert([payload]);
             if (!error) {
                 world.ringsData([{ lat: state.lat, lng: state.lng, color: '#fff' }]);
                 alert('Sent! / Отправлено!');
                 location.reload();
+            } else {
+                console.error("Error:", error);
+                alert("Database Error!");
             }
         }
         world.controls().autoRotate = true;
