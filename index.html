@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMO-PULSE 2026 | Global Tracker</title>
+    <script src="https://unpkg.com"></script>
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        .ui { position: absolute; z-index: 10; width: 100%; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+        .top { top: 20px; } .bottom { bottom: 40px; }
+        .panel { background: rgba(15,15,15,0.8); backdrop-filter: blur(10px); padding: 20px; border-radius: 20px; border: 1px solid #333; pointer-events: auto; text-align: center; }
+        .label { font-size: 10px; letter-spacing: 2px; color: #888; margin-bottom: 10px; }
+        button { padding: 10px 15px; margin: 4px; border-radius: 12px; border: 1px solid #444; background: #111; color: #fff; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button.selected { background: #fff; color: #000; }
+        .emo-joy { border-color: #00ff88; color: #00ff88; }
+        .emo-sad { border-color: #44aaff; color: #44aaff; }
+        .emo-anger { border-color: #ff4444; color: #ff4444; }
+    </style>
+</head>
+<body>
+
+    <div class="ui top">
+        <div class="panel">
+            <div class="label">1. STATUS / СТАТУС</div>
+            <button onclick="setMode('here', this)">📍 I AM HERE / Я ТУТ</button>
+            <button onclick="setMode('focus', this)">💭 THINKING OF / ДУМАЮ ОБ ЭТОМ</button>
+        </div>
+    </div>
+
+    <div id="globeViz"></div>
+
+    <div class="ui bottom" id="action-panel" style="display: none;">
+        <div class="panel">
+            <div class="label" id="instr">2. CLICK GLOBE / КЛИКНИТЕ НА ШАР</div>
+            <div id="emotions" style="display: none;">
+                <div class="label">3. EMOTION / ЭМОЦИЯ</div>
+                <button class="emo-joy" onclick="finish('joy')">JOY / РАДОСТЬ</button>
+                <button class="emo-sad" onclick="finish('sad')">SAD / ГРУСТЬ</button>
+                <button class="emo-anger" onclick="finish('anger')">ANGER / ГНЕВ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ВАЖНО: Вставьте ваши ключи из Supabase здесь
+        const SB_URL = 'ВАШ_SUPABASE_URL';
+        const SB_KEY = 'ВАШ_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        let state = { mode: null, lat: null, lng: null };
+
+        const world = Globe()(document.getElementById('globeViz'))
+            .globeImageUrl('//://unpkg.com')
+            .onGlobeClick(({ lat, lng }) => {
+                if(!state.mode) return;
+                state.lat = lat; state.lng = lng;
+                document.getElementById('instr').style.display = 'none';
+                document.getElementById('emotions').style.display = 'block';
+            });
+
+        function setMode(m, el) {
+            state.mode = m;
+            document.querySelectorAll('.top button').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('action-panel').style.display = 'flex';
+        }
+
+        async function finish(emotion) {
+            const fingerprint = btoa(navigator.userAgent + navigator.language).slice(0, 16);
+            const payload = {
+                emotion,
+                presence_type: state.mode,
+                lat: state.lat, lng: state.lng,
+                os: navigator.platform,
+                browser: navigator.userAgent,
+                lang: navigator.language,
+                fingerprint: fingerprint
+            };
+
+            const { error } = await supabase.from('world_mood_data').insert([payload]);
+            if (!error) {
+                world.ringsData([{ lat: state.lat, lng: state.lng, color: '#fff' }]);
+                alert('Sent! / Отправлено!');
+                location.reload();
+            }
+        }
+        world.controls().autoRotate = true;
+    </script>
+</body>
+</html>
