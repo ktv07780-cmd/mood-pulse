@@ -1,11 +1,11 @@
-/* === Глобальные переменные === */
+/* === Глобальный state === */
 let state = {
     mode: null,
     lat: null,
     lng: null
 };
 
-/* === Данные континентов === */
+/* === данные континентов === */
 const continents = [
     { name: 'North America', lat: 54, lng: -105 },
     { name: 'South America', lat: -15, lng: -60 },
@@ -16,7 +16,7 @@ const continents = [
     { name: 'Antarctica', lat: -80, lng: 0 }
 ];
 
-/* === Создание глобуса === */
+/* === создание глобуса === */
 const world = Globe()(document.getElementById('globeViz'))
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
     .backgroundColor('#000')
@@ -31,12 +31,12 @@ const world = Globe()(document.getElementById('globeViz'))
 world.controls().autoRotate = true;
 world.controls().autoRotateSpeed = 0.6;
 
-/* === Снежный эффект на полюсах === */
+/* === снежный эффект на полюсах === */
 const polarSnowPoints = [];
 
-// северный полюс: широта 75°–90°
-for(let lat = 75; lat <= 90; lat += 1){
-    for(let lng = -180; lng < 180; lng += 10){
+// северный полюс
+for(let lat=75; lat<=90; lat++){
+    for(let lng=-180; lng<180; lng+=10){
         polarSnowPoints.push({
             lat, lng,
             size: 0.3 + Math.random()*0.2,
@@ -45,9 +45,9 @@ for(let lat = 75; lat <= 90; lat += 1){
     }
 }
 
-// южный полюс: широта -75°–-90°
-for(let lat = -90; lat <= -75; lat += 1){
-    for(let lng = -180; lng < 180; lng += 10){
+// южный полюс
+for(let lat=-90; lat<=-75; lat++){
+    for(let lng=-180; lng<180; lng+=10){
         polarSnowPoints.push({
             lat, lng,
             size: 0.3 + Math.random()*0.2,
@@ -56,38 +56,9 @@ for(let lat = -90; lat <= -75; lat += 1){
     }
 }
 
-// добавляем точки на глобус
 world.pointsData(polarSnowPoints)
      .pointLat(d => d.lat)
      .pointLng(d => d.lng)
      .pointColor(d => d.color)
      .pointAltitude(0.01)
      .pointRadius(d => d.size);
-
-/* === UI === */
-function setMode(m, el) {
-    state.mode = m;
-    document.querySelectorAll('.top button').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('action-panel').style.display = 'flex';
-}
-
-/* === Континенты и сетка === */
-function toggleContinents(enabled) {
-    if (enabled) {
-        world.labelsData(continents)
-            .labelLat(d => d.lat)
-            .labelLng(d => d.lng)
-            .labelText(d => d.name)
-            .labelSize(1.1)
-            .labelDotRadius(0.5)
-            .labelColor(() => 'rgba(255,255,255,0.9)')
-            .labelResolution(2);
-    } else {
-        world.labelsData([]);
-    }
-}
-
-function toggleGrid(enabled) {
-    world.graticulesData(enabled ? [{}] : []);
-}
