@@ -6,7 +6,8 @@ window.supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
 /* отправка эмоции */
 window.finish = async function(emotion){
-    if(!window.state.lat || !window.state.lng) return;
+    const hasValidCoordinates = Number.isFinite(window.state.lat) && Number.isFinite(window.state.lng);
+    if(!hasValidCoordinates) return;
 
     const payload = {
         emotion,
